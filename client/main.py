@@ -10,9 +10,6 @@ import network
 
 DEFAULT_I2C_ADDR = 0x27
 
-import time
-from umqtt.simple import MQTTClient
-
 
 class lcd_helper:
     def __init__(self):
