@@ -1,8 +1,9 @@
 __author__ = 'Jesse'
 
 import paho.mqtt.client as mqtt
-import mqtt_creds
+import mqtt_creds_server
 import datetime
+import pytz
 from time import sleep
 
 
@@ -25,8 +26,8 @@ client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
-client.username_pw_set(mqtt_creds.username, mqtt_creds.password)
-client.connect(mqtt_creds.server, 1883, 60)
+client.username_pw_set(mqtt_creds_server.username, mqtt_creds_server.password)
+client.connect(mqtt_creds_server.server, 1883, 60)
 
 
 # Write_headers
@@ -61,7 +62,7 @@ def write_time(now):
 
 
 while True:
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(pytz.timezone('US/Eastern'))
     if now.second == 0:
         write_time(now)
         sleep(2)
