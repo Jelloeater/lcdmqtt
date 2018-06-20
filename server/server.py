@@ -29,13 +29,19 @@ client.username_pw_set(mqtt_creds.username, mqtt_creds.password)
 client.connect(mqtt_creds.server, 1883, 60)
 
 
+# Write_headers
+client.publish('lcd/clear', qos=0, retain=False)
+client.publish('lcd/move', '0,0', qos=0, retain=False)
+client.publish('lcd/write', 'Time:', qos=0, retain=False)
+
+
 # Blocking call that processes network traffic, dispatches callbacks and
 # handles reconnecting.
 # Other loop*() functions are available that give a threaded interface and a
 # manual interface.
 # client.loop_forever()
 
-def write_screen(now):
+def write_time(now):
     if now.hour > 12:
         hour = now.hour - 12
         am_pm = ' Pm'
@@ -49,13 +55,14 @@ def write_screen(now):
         minute = now.minute
 
     time = str(hour) + ":" + str(minute) + am_pm
-    message = 'Time: {}'.format(str(time))
-    client.publish('lcd_msg', message, qos=0, retain=False)
+
+    client.publish('lcd/move', '5,0', qos=0, retain=False)
+    client.publish('lcd/write', time, qos=0, retain=False)
 
 
 while True:
     now = datetime.datetime.now()
     if now.second == 0:
-        write_screen(now)
+        write_time(now)
         sleep(2)
-    sleep(.01)  # Prevent 100% CPU Usage
+    sleep(.1)  # Prevent 100% CPU Usage

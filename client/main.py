@@ -21,33 +21,55 @@ class lcd_helper:
         self.lcd.putstr(msg)
 
 
-lcd = lcd_helper()
+
+lcd_obj = lcd_helper()
 
 
 class main:
     @staticmethod
     def do_connect():
-        lcd.write_lcd('Setting Up Network...')
+        lcd_obj.write_lcd('Setting Up Network...')
         sta_if = network.WLAN(network.STA_IF)
         if sta_if.isconnected():
             sleep(2)
-            lcd.write_lcd(str(sta_if.ifconfig()))
+            lcd_obj.write_lcd(str(sta_if.ifconfig()))
             sleep(2)
         else:
-            lcd.write_lcd('Retrying connection')
+            lcd_obj.write_lcd('Retrying connection')
             sta_if.active(True)
             sleep(2)
-            lcd.write_lcd(str(sta_if.ifconfig()))
+            lcd_obj.write_lcd(str(sta_if.ifconfig()))
             sleep(2)
             if not sta_if.isconnected():
-                lcd.write_lcd('Cannot connect, rebooting...')
+                lcd_obj.write_lcd('Cannot connect, rebooting...')
                 reset()
 
 
     @staticmethod
     def sub_cb(topic, msg):
-        print((topic, msg))
-        lcd.write_lcd(msg.decode("utf-8"))
+        # print(topic,msg)
+        topic_s = topic.decode("utf-8")
+        msg_s = msg.decode("utf-8")
+        # print(topic_s,msg_s)
+
+        if topic_s == 'lcd/message':
+            lcd_obj.write_lcd(msg_s)
+        if topic_s == 'lcd/backlight':
+            if msg_s == '1':
+                lcd_obj.lcd.backlight_on()
+            else:
+                lcd_obj.lcd.backlight_off()
+        if topic_s == 'lcd/move':
+            try:
+                x = int(str(msg_s).split(',')[0])
+                y = int(str(msg_s).split(',')[1])
+                lcd_obj.lcd.move_to(x,y)
+            except:
+                lcd_obj.write_lcd('invalid cursor location')
+        if topic_s == 'lcd/write':
+            lcd_obj.lcd.putstr(msg_s)
+        if topic_s == 'lcd/clear':
+            lcd_obj.lcd.clear()
 
     @staticmethod
     def run():
@@ -57,11 +79,11 @@ class main:
 
         try:
             c.connect()
-            c.subscribe(b"lcd_msg")
+            c.subscribe(b"lcd/#")
             while True:
                 c.wait_msg()
         except:
-            lcd.write_lcd('Cannot connect to server')
+            lcd_obj.write_lcd('Cannot connect to server')
             sleep(4)
             reset()  # When in doubt, REBOOT
 
@@ -69,5 +91,5 @@ class main:
 if __name__ == "__main__":
     main.do_connect()
     sleep(5)  # Wait for network
-    lcd.write_lcd('READY NOW')
+    lcd_obj.write_lcd('READY NOW')
     main.run()
