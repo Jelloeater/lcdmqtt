@@ -1,4 +1,10 @@
 __author__ = 'Jesse'
+import logging
+
+logging.basicConfig(format="[%(asctime)s] [%(levelname)8s] --- %(message)s (%(filename)s:%(lineno)s)",
+                    level=logging.INFO,
+                    # filename='autobot.log'  #Logging to file disabled
+                    )
 
 import paho.mqtt.client as mqtt
 import mqtt_creds_server
@@ -6,10 +12,12 @@ import datetime
 import pytz
 from time import sleep
 
+client = mqtt.Client()
+
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
-    print("Connected with result code " + str(rc))
+    logging.info("Connected with result code " + str(rc))
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
@@ -18,17 +26,14 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    print(msg.topic + " " + str(msg.payload))
+    logging.info(msg.topic + " " + str(msg.payload))
 
-
-client = mqtt.Client()
-
-client.on_connect = on_connect
-client.on_message = on_message
 
 client.username_pw_set(mqtt_creds_server.username, mqtt_creds_server.password)
 client.connect(mqtt_creds_server.server, 1883, 60)
 
+client.on_connect = on_connect
+client.on_message = on_message
 
 # Write_headers
 client.publish('lcd/clear', qos=0, retain=False)
