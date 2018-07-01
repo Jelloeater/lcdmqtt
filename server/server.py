@@ -7,45 +7,24 @@ logging.basicConfig(format="[%(asctime)s] [%(levelname)8s] --- %(message)s (%(fi
                     )
 
 import paho.mqtt.client as mqtt
-import mqtt_creds_server
+import mqtt_creds_server # Rename mqtt_creds_example and fill in your own info
 import datetime
 import pytz
 from time import sleep
+import weather
 
 client = mqtt.Client()
-
-
-# The callback for when the client receives a CONNACK response from the server.
-def on_connect(client, userdata, flags, rc):
-    logging.info("Connected with result code " + str(rc))
-
-    # Subscribing in on_connect() means that if we lose the connection and
-    # reconnect then subscriptions will be renewed.
-    # client.subscribe("$SYS/#")
-
-
-# The callback for when a PUBLISH message is received from the server.
-def on_message(client, userdata, msg):
-    logging.info(msg.topic + " " + str(msg.payload))
-
-
 client.username_pw_set(mqtt_creds_server.username, mqtt_creds_server.password)
 client.connect(mqtt_creds_server.server, 1883, 60)
 
-client.on_connect = on_connect
-client.on_message = on_message
 
-# Write_headers
-client.publish('lcd/clear', qos=0, retain=False)
-client.publish('lcd/move', '0,0', qos=0, retain=False)
-client.publish('lcd/write', 'Time:', qos=0, retain=False)
+def write_weather():
+    w = weather.Weather()
+    l = w.lookup(mqtt_creds_server.yahoo_world_id)
 
+    client.publish('lcd/move', '0,1', qos=0, retain=False)
+    client.publish('lcd/write', 'Temp:' + str(l.condition.temp + 'C ' + l.condition.text), qos=0, retain=False)
 
-# Blocking call that processes network traffic, dispatches callbacks and
-# handles reconnecting.
-# Other loop*() functions are available that give a threaded interface and a
-# manual interface.
-# client.loop_forever()
 
 def write_time(now):
     if now.hour > 12:
@@ -62,13 +41,15 @@ def write_time(now):
 
     time = str(hour) + ":" + str(minute) + am_pm
 
-    client.publish('lcd/move', '5,0', qos=0, retain=False)
-    client.publish('lcd/write', time, qos=0, retain=False)
+    client.publish('lcd/move', '0,0', qos=0, retain=False)
+    client.publish('lcd/write', 'Time:' + time, qos=0, retain=False)
 
 
 while True:
-    now = datetime.datetime.now(pytz.timezone('US/Eastern'))
+    now = datetime.datetime.now(pytz.timezone(mqtt_creds_server.pytz_timezone))
     if now.second == 0:
+        client.publish('lcd/clear', qos=0, retain=False)
         write_time(now)
+        write_weather()
         sleep(2)
     sleep(.1)  # Prevent 100% CPU Usage
