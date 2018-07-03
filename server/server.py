@@ -1,5 +1,3 @@
-from weather.objects.unit_obj import Unit
-
 __author__ = 'Jesse'
 import logging
 
@@ -87,7 +85,7 @@ def main():
         if now.second == 0:
             write_time(now)
             write_weather()
-            if now.hour < 23 or now.hour > 7: # Turn off backlight when its night time
+            if now.hour > 22 or now.hour < 7: # Turn off backlight when its night time
                 client.publish('lcd/backlight', '1', qos=0, retain=False)
             else:
                 client.publish('lcd/backlight', '0', qos=0, retain=False)
